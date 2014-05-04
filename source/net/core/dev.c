@@ -1350,7 +1350,7 @@ void dev_disable_lro(struct net_device *dev)
 EXPORT_SYMBOL(dev_disable_lro);
 
 
-static int dev_boot_phase = 1;
+static int dev_boot_phase = 1;  // 1. 代表启动阶段. 0. 代表启动完毕
 
 /**
  *	register_netdevice_notifier - register a network notifier block

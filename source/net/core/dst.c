@@ -156,11 +156,11 @@ void *dst_alloc(struct dst_ops *ops, struct net_device *dev,
 {
     struct dst_entry *dst;
 
-    if (ops->gc && dst_entries_get_fast(ops) > ops->gc_thresh) {
+    if (ops->gc && dst_entries_get_fast(ops) > ops->gc_thresh) {  // 检查"供应是否紧张",调用回收函数
         if (ops->gc(ops))
             return NULL;
     }
-    dst = kmem_cache_alloc(ops->kmem_cachep, GFP_ATOMIC);
+    dst = kmem_cache_alloc(ops->kmem_cachep, GFP_ATOMIC); //lgx_mark 实际分配一个路由表结构，dst在路由表开始.
     if (!dst)
         return NULL;
     dst->child = NULL;
@@ -170,7 +170,7 @@ void *dst_alloc(struct dst_ops *ops, struct net_device *dev,
     dst->ops = ops;
     dst_init_metrics(dst, dst_default_metrics, true);
     dst->expires = 0UL;
-    dst->path = dst;
+    dst->path = dst;  //用于IPSEC流量控制
     RCU_INIT_POINTER(dst->_neighbour, NULL);
 #ifdef CONFIG_XFRM
     dst->xfrm = NULL;

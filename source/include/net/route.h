@@ -51,7 +51,7 @@ struct fib_info;
 在实际使用时，还在它的外面包装了一层，形成一个结构体struct rtable。
 */
 
-struct rtable {  // 路由表结构
+struct rtable {  //lgx_mark 路由表结构
     struct dst_entry	dst;  // 路由项定义
 
     /* Lookup key. */
@@ -284,7 +284,7 @@ static inline void ip_route_connect_init(struct flowi4 *fl4, __be32 dst, __be32 
                        protocol, flow_flags, dst, src, dport, sport);
 }
 
-static inline struct rtable *ip_route_connect(struct flowi4 *fl4,
+static inline struct rtable *ip_route_connect(struct flowi4 *fl4,   // lgx_mark
         __be32 dst, __be32 src, u32 tos,
         int oif, u8 protocol,  // oif 发送设备 protocol 指定的ip协议
         __be16 sport, __be16 dport,

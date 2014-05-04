@@ -71,7 +71,7 @@ static int notifier_chain_unregister(struct notifier_block **nl,
  *	@returns:	notifier_call_chain returns the value returned by the
  *			last notifier function called.
  */
-static int __kprobes notifier_call_chain(struct notifier_block **nl,
+static int __kprobes notifier_call_chain(struct notifier_block **nl,   // lgx_mark 调用通知链
 					unsigned long val, void *v,
 					int nr_to_call,	int *nr_calls)
 {
@@ -319,7 +319,7 @@ int __blocking_notifier_call_chain(struct blocking_notifier_head *nh,
 }
 EXPORT_SYMBOL_GPL(__blocking_notifier_call_chain);
 
-int blocking_notifier_call_chain(struct blocking_notifier_head *nh,
+int blocking_notifier_call_chain(struct blocking_notifier_head *nh, // 增加了对RCU锁的使用
 		unsigned long val, void *v)
 {
 	return __blocking_notifier_call_chain(nh, val, v, -1, NULL);

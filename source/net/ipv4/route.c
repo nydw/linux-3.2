@@ -193,7 +193,7 @@ static u32 *ipv4_cow_metrics(struct dst_entry *dst, unsigned long old)
 
 static struct neighbour *ipv4_neigh_lookup(const struct dst_entry *dst, const void *daddr);
 
-static struct dst_ops ipv4_dst_ops = {
+static struct dst_ops ipv4_dst_ops = { // 路由操作函数表
     .family =		AF_INET,
     .protocol =		cpu_to_be16(ETH_P_IP),
     .gc =			rt_garbage_collect,
@@ -1195,7 +1195,7 @@ restart:
         goto skip_hashing;
     }
 
-    rthp = &rt_hash_table[hash].chain;
+    rthp = &rt_hash_table[hash].chain;  // 获取所在队列的第一个路由表
 
     spin_lock_bh(rt_hash_lock_addr(hash));
     while ((rth = rcu_dereference_protected(*rthp,
@@ -1205,7 +1205,8 @@ restart:
             rt_free(rth);
             continue;
         }
-        if (compare_keys(rth, rt) && compare_netns(rth, rt)) { // 重复的条目
+        if (compare_keys(rth, rt) && compare_netns(rth, rt))    // 路由键值内容是否相同，是否同属于一个网络空间------------重复的条目,移动到队列的最前端
+        {
             /* Put it first */
             *rthp = rth->dst.rt_next;
             /*
@@ -1219,21 +1220,21 @@ restart:
              * Since lookup is lockfree, the update writes
              * must be ordered for consistency on SMP.
              */
-            rcu_assign_pointer(rt_hash_table[hash].chain, rth);
+            rcu_assign_pointer(rt_hash_table[hash].chain, rth);  // 找到的路由表移动到最前端
 
-            dst_use(&rth->dst, now);
+            dst_use(&rth->dst, now); // 调整时间
             spin_unlock_bh(rt_hash_lock_addr(hash));
 
-            rt_drop(rt);
+            rt_drop(rt);  // 放弃新建的路由表
             if (skb)
                 skb_dst_set(skb, &rth->dst);
             return rth;
         }
 
-        if (!atomic_read(&rth->dst.__refcnt)) {
-            u32 score = rt_score(rth);
+        if (!atomic_read(&rth->dst.__refcnt)) {  // 如果还没有使用过
+            u32 score = rt_score(rth);  // 计算一个参考分值
 
-            if (score <= min_score) {
+            if (score <= min_score) {  // 找到得分最小的路由表，找到一个可以回收的路由表，节省路由表空间
                 cand = rth;
                 candp = rthp;
                 min_score = score;
@@ -1245,18 +1246,21 @@ restart:
         rthp = &rth->dst.rt_next;
     }
 
-    if (cand) {
+    if (cand)
+    {   // 如果找到了合适路由表
         /* ip_rt_gc_elasticity used to be average length of chain
          * length, when exceeded gc becomes really aggressive.
          *
          * The second limit is less certain. At the moment it allows
          * only 2 entries per bucket. We will see.
          */
-        if (chain_length > ip_rt_gc_elasticity) {
-            *candp = cand->dst.rt_next;
+        if (chain_length > ip_rt_gc_elasticity) { // 此时搜索路由表计数超过平均值
+            *candp = cand->dst.rt_next;  // 指向它后面的路由表
             rt_free(cand);
         }
-    } else {
+    }
+    else
+    {
         if (chain_length > rt_chain_length_max &&
                 slow_chain_length(rt_hash_table[hash].chain) > rt_chain_length_max) {
             struct net *net = dev_net(rt->dst.dev);
@@ -1278,7 +1282,7 @@ restart:
        route or unicast forwarding path.
      */
     if (rt->rt_type == RTN_UNICAST || rt_is_output_route(rt)) {
-        int err = rt_bind_neighbour(rt);
+        int err = rt_bind_neighbour(rt);  // 查找邻居结构
         if (err) {
             spin_unlock_bh(rt_hash_lock_addr(hash));
 
@@ -1291,7 +1295,8 @@ restart:
                can be released. Try to shrink route cache,
                it is most likely it holds some neighbour records.
              */
-            if (attempts-- > 0) {
+            if (attempts-- > 0) // 调整回收的底线，回收部分路由缓存
+            {
                 int saved_elasticity = ip_rt_gc_elasticity;
                 int saved_int = ip_rt_gc_min_interval;
                 ip_rt_gc_elasticity	= 1;
@@ -1302,7 +1307,7 @@ restart:
                 goto restart;
             }
 
-            if (net_ratelimit())
+            if (net_ratelimit())  // 打印限速
                 printk(KERN_WARNING "ipv4: Neighbour table overflow.\n");
             rt_drop(rt);
             return ERR_PTR(-ENOBUFS);
@@ -1993,16 +1998,18 @@ static void rt_set_nexthop(struct rtable *rt, const struct flowi4 *fl4,
         if (FIB_RES_GW(*res) &&
                 FIB_RES_NH(*res).nh_scope == RT_SCOPE_LINK)
             rt->rt_gateway = FIB_RES_GW(*res);
+
         rt_init_metrics(rt, fl4, fi);
+
 #ifdef CONFIG_IP_ROUTE_CLASSID
         dst->tclassid = FIB_RES_NH(*res).nh_tclassid;
 #endif
     }
 
     if (dst_mtu(dst) > IP_MAX_MTU)
-        dst_metric_set(dst, RTAX_MTU, IP_MAX_MTU);
+        dst_metric_set(dst, RTAX_MTU, IP_MAX_MTU);  // MTU值
     if (dst_metric_raw(dst, RTAX_ADVMSS) > 65535 - 40)
-        dst_metric_set(dst, RTAX_ADVMSS, 65535 - 40);
+        dst_metric_set(dst, RTAX_ADVMSS, 65535 - 40);  // 对外国内公开的MSS
 
 #ifdef CONFIG_IP_ROUTE_CLASSID
 #ifdef CONFIG_IP_MULTIPLE_TABLES
@@ -2316,7 +2323,7 @@ static int ip_route_input_slow(struct sk_buff *skb, __be32 daddr, __be32 saddr,
     fl4.saddr = saddr;
     err = fib_lookup(net, &fl4, &res); // 通过路由函数表查找目标地址
     if (err != 0) {
-        if (!IN_DEV_FORWARD(in_dev))
+        if (!IN_DEV_FORWARD(in_dev)) // 不支持转发
             goto e_hostunreach;
         goto no_route;
     }
@@ -2331,14 +2338,14 @@ static int ip_route_input_slow(struct sk_buff *skb, __be32 daddr, __be32 saddr,
                                   net->loopback_dev->ifindex,
                                   dev, &spec_dst, &itag); // 检查源地址
         if (err < 0)
-            goto martian_source_keep_err;
+            goto martian_source_keep_err; // 源地址错误
         if (err)
             flags |= RTCF_DIRECTSRC;
-        spec_dst = daddr;
-        goto local_input;
+        spec_dst = daddr;  // 记录目标地址
+        goto local_input;  // 本地输入，跳转
     }
 
-    if (!IN_DEV_FORWARD(in_dev))
+    if (!IN_DEV_FORWARD(in_dev))   // 如果设备不支持转发
         goto e_hostunreach;
     if (res.type != RTN_UNICAST)
         goto martian_destination;
@@ -2384,7 +2391,7 @@ local_input: // 本地输入
     rth->rt_flags 	= flags|RTCF_LOCAL; // 清理本地路由标志
     rth->rt_type	= res.type; // 记录目标地址类型
     rth->rt_key_tos	= tos;      // 记录tos
-    rth->rt_dst	= daddr;  
+    rth->rt_dst	= daddr;
     rth->rt_src	= saddr;
 #ifdef CONFIG_IP_ROUTE_CLASSID
     rth->dst.tclassid = itag;
@@ -2393,7 +2400,7 @@ local_input: // 本地输入
     rth->rt_iif	= dev->ifindex;
     rth->rt_oif	= 0;
     rth->rt_mark    = skb->mark; // 记录掩码
-    rth->rt_gateway	= daddr;  
+    rth->rt_gateway	= daddr;
     rth->rt_spec_dst= spec_dst;
     rth->rt_peer_genid = 0;
     rth->peer = NULL;
@@ -2561,7 +2568,7 @@ static struct rtable *__mkroute_output(const struct fib_result *res,
     u16 type = res->type;
     struct rtable *rth;
 
-    if (ipv4_is_loopback(fl4->saddr) && !(dev_out->flags & IFF_LOOPBACK))
+    if (ipv4_is_loopback(fl4->saddr) && !(dev_out->flags & IFF_LOOPBACK)) // 源地址是回接地址，但是发送设备不支持回接就返回
         return ERR_PTR(-EINVAL);
 
     if (ipv4_is_lbcast(fl4->daddr))
@@ -2571,10 +2578,10 @@ static struct rtable *__mkroute_output(const struct fib_result *res,
     else if (ipv4_is_zeronet(fl4->daddr))
         return ERR_PTR(-EINVAL);
 
-    if (dev_out->flags & IFF_LOOPBACK)
-        flags |= RTCF_LOCAL;
+    if (dev_out->flags & IFF_LOOPBACK)  // 发送设备支持回接
+        flags |= RTCF_LOCAL;  // 增加本地路由标志
 
-    in_dev = __in_dev_get_rcu(dev_out);
+    in_dev = __in_dev_get_rcu(dev_out);  // 取得配置结构
     if (!in_dev)
         return ERR_PTR(-EINVAL);
 
@@ -2590,53 +2597,58 @@ static struct rtable *__mkroute_output(const struct fib_result *res,
          * default one, but do not gateway in this case.
          * Yes, it is hack.
          */
-        if (fi && res->prefixlen < 4)
+        if (fi && res->prefixlen < 4)  // 放弃使用路由信息结构
             fi = NULL;
     }
 
-    rth = rt_dst_alloc(dev_out,
+    rth = rt_dst_alloc(dev_out,    //lgx_mark 分配路由表结构
                        IN_DEV_CONF_GET(in_dev, NOPOLICY),
                        IN_DEV_CONF_GET(in_dev, NOXFRM));
     if (!rth)
         return ERR_PTR(-ENOBUFS);
 
-    rth->dst.output = ip_output;
+    rth->dst.output = ip_output;   // 设置路由项的发送数据包函数
 
-    rth->rt_key_dst	= orig_daddr;
-    rth->rt_key_src	= orig_saddr;
-    rth->rt_genid = rt_genid(dev_net(dev_out));
+    rth->rt_key_dst	= orig_daddr;   // 记录原来制定的目的地址
+    rth->rt_key_src	= orig_saddr;   // 记录原来制定的源地址
+    rth->rt_genid = rt_genid(dev_net(dev_out));  // 记录随机数
     rth->rt_flags	= flags;
     rth->rt_type	= type;
     rth->rt_key_tos	= orig_rtos;
-    rth->rt_dst	= fl4->daddr;
-    rth->rt_src	= fl4->saddr;
+    rth->rt_dst	= fl4->daddr;  // 记录目标地址，来自于上一级函数对路由查询结果
+    rth->rt_src	= fl4->saddr;  // 记录源地址，来自于上一级函数对路由查询结果
     rth->rt_route_iif = 0;
-    rth->rt_iif	= orig_oif ? : dev_out->ifindex;
-    rth->rt_oif	= orig_oif;
-    rth->rt_mark    = fl4->flowi4_mark;
-    rth->rt_gateway = fl4->daddr;
-    rth->rt_spec_dst= fl4->saddr;
+    rth->rt_iif	= orig_oif ? : dev_out->ifindex;   // 确定接收设备
+    rth->rt_oif	= orig_oif;   // 记录原来的发送设备
+    rth->rt_mark    = fl4->flowi4_mark;  // 记录原来的掩码
+    rth->rt_gateway = fl4->daddr;   // 使用目的地址作为网关
+    rth->rt_spec_dst= fl4->saddr;   // 使用源地址作为指定目标
     rth->rt_peer_genid = 0;
     rth->peer = NULL;
     rth->fi = NULL;
 
-    RT_CACHE_STAT_INC(out_slow_tot);
+    RT_CACHE_STAT_INC(out_slow_tot);  // 递增计数器
 
-    if (flags & RTCF_LOCAL) {
-        rth->dst.input = ip_local_deliver;
-        rth->rt_spec_dst = fl4->daddr;
+    if (flags & RTCF_LOCAL)
+    {
+        rth->dst.input = ip_local_deliver;  // 设置路由项的接收数据包函数
+        rth->rt_spec_dst = fl4->daddr;  // 使用目标地址作为制定目标
     }
-    if (flags & (RTCF_BROADCAST | RTCF_MULTICAST)) {
-        rth->rt_spec_dst = fl4->saddr;
+    if (flags & (RTCF_BROADCAST | RTCF_MULTICAST))
+    {
+        rth->rt_spec_dst = fl4->saddr;   // 使用源地址作为制定目标
         if (flags & RTCF_LOCAL &&
-                !(dev_out->flags & IFF_LOOPBACK)) {
-            rth->dst.output = ip_mc_output;
-            RT_CACHE_STAT_INC(out_slow_mc);
+                !(dev_out->flags & IFF_LOOPBACK))
+        {
+            rth->dst.output = ip_mc_output;   // 设置路由项的接收数据包函数
+            RT_CACHE_STAT_INC(out_slow_mc);  // 递增使用计数
         }
 #ifdef CONFIG_IP_MROUTE
-        if (type == RTN_MULTICAST) {
+        if (type == RTN_MULTICAST)
+        {
             if (IN_DEV_MFORWARD(in_dev) &&
-                    !ipv4_is_local_multicast(fl4->daddr)) {
+                    !ipv4_is_local_multicast(fl4->daddr))
+            {
                 rth->dst.input = ip_mr_input;
                 rth->dst.output = ip_mc_output;
             }
@@ -2644,7 +2656,7 @@ static struct rtable *__mkroute_output(const struct fib_result *res,
 #endif
     }
 
-    rt_set_nexthop(rth, fl4, res, fi, type, 0);
+    rt_set_nexthop(rth, fl4, res, fi, type, 0); // 根据查询结果设置路由表
 
     return rth;
 }
@@ -2841,7 +2853,7 @@ static struct rtable *ip_route_output_slow(struct net *net, struct flowi4 *fl4) 
 
 
 make_route:  //到达此处已经确定了源地址，目标地址和发送设备，接着创建路由表
-    rth = __mkroute_output(&res, fl4, orig_daddr, orig_saddr, orig_oif,
+    rth = __mkroute_output(&res, fl4, orig_daddr, orig_saddr, orig_oif,  // 创建新的路由表
                            tos, dev_out, flags);
     if (!IS_ERR(rth)) {
         unsigned int hash;
@@ -2984,13 +2996,13 @@ struct dst_entry *ipv4_blackhole_route(struct net *net, struct dst_entry *dst_or
 struct rtable *ip_route_output_flow(struct net *net, struct flowi4 *flp4,
                                     struct sock *sk)
 {
-    struct rtable *rt = __ip_route_output_key(net, flp4); //route_mark 查找路由表
+    struct rtable *rt = __ip_route_output_key(net, flp4); //lgx_mark 查找路由表
 
     if (IS_ERR(rt))
         return rt;
 
     if (flp4->flowi4_proto) // 如果指明了协议
-        rt = (struct rtable *) xfrm_lookup(net, &rt->dst, flowi4_to_flowi(flp4), sk, 0);
+        rt = (struct rtable *) xfrm_lookup(net, &rt->dst, flowi4_to_flowi(flp4), sk, 0);  // IPsec
 
     return rt;
 }

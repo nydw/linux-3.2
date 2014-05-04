@@ -1054,7 +1054,7 @@ int sock_create_lite(int family, int type, int protocol, struct socket **res)
     if (err)
         goto out;
 
-    sock = sock_alloc();
+    sock = sock_alloc(); // 它在网络文件系统中分配一个用于netlink的socket结构
     if (!sock) {
         err = -ENOMEM;
         goto out;

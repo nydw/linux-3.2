@@ -371,19 +371,19 @@ int fib_detect_death(struct fib_info *fi, int order,
     struct neighbour *n;
     int state = NUD_NONE;
 
-    n = neigh_lookup(&arp_tbl, &fi->fib_nh[0].nh_gw, fi->fib_dev);
+    n = neigh_lookup(&arp_tbl, &fi->fib_nh[0].nh_gw, fi->fib_dev);  // 全局邻居表中查找邻居结构
     if (n) {
         state = n->nud_state;
         neigh_release(n);
     }
-    if (state == NUD_REACHABLE)
+    if (state == NUD_REACHABLE)  // 检测可以到达
         return 0;
-    if ((state & NUD_VALID) && order != dflt)
+    if ((state & NUD_VALID) && order != dflt)  // 状态正常但是队列序号原来不同
         return 0;
     if ((state & NUD_VALID) ||
-            (*last_idx < 0 && order > dflt)) {
-        *last_resort = fi;
-        *last_idx = order;
+            (*last_idx < 0 && order > dflt)) { //状态正常或者上次记录的序号为负且当前的队列序号大于原来的序号
+        *last_resort = fi;   // 记录当前的路由信息结构
+        *last_idx = order;  // 记录当前的队列序号
     }
     return 1;
 }
@@ -1131,35 +1131,36 @@ void fib_select_default(struct fib_result *res)
     int order = -1, last_idx = -1;
     struct fib_alias *fa;
 
-    list_for_each_entry_rcu(fa, fa_head, fa_list) {
+    list_for_each_entry_rcu(fa, fa_head, fa_list)
+    {
         struct fib_info *next_fi = fa->fa_info;
 
-        if (next_fi->fib_scope != res->scope ||
+        if (next_fi->fib_scope != res->scope ||   // 查找符合范围和单播类型的路由别名
                 fa->fa_type != RTN_UNICAST)
             continue;
 
-        if (next_fi->fib_priority > res->fi->fib_priority)
+        if (next_fi->fib_priority > res->fi->fib_priority)  // 检查路由信息结构优先级
             break;
-        if (!next_fi->fib_nh[0].nh_gw ||
-                next_fi->fib_nh[0].nh_scope != RT_SCOPE_LINK)
+        if (!next_fi->fib_nh[0].nh_gw ||   // 检查路由信息结构中的跳转结构
+                next_fi->fib_nh[0].nh_scope != RT_SCOPE_LINK)  
             continue;
 
-        fib_alias_accessed(fa);
+        fib_alias_accessed(fa);  // 路由别名设置访问标志
 
         if (fi == NULL) {
-            if (next_fi != res->fi)
+            if (next_fi != res->fi)   // 如果找到的路由信息结构与查找的不同
                 break;
-        } else if (!fib_detect_death(fi, order, &last_resort,
+        } else if (!fib_detect_death(fi, order, &last_resort,  // 在邻居子系统中检测路由是否可以到达
                                      &last_idx, tb->tb_default)) {
-            fib_result_assign(res, fi);
-            tb->tb_default = order;
+            fib_result_assign(res, fi);  // 记录路由信息到res
+            tb->tb_default = order;  // 记录路由信息结构在队列中的序号
             goto out;
         }
         fi = next_fi;
         order++;
     }
 
-    if (order <= 0 || fi == NULL) {
+    if (order <= 0 || fi == NULL) { // 如果没有找到路由信息结构
         tb->tb_default = -1;
         goto out;
     }
@@ -1172,8 +1173,8 @@ void fib_select_default(struct fib_result *res)
     }
 
     if (last_idx >= 0)
-        fib_result_assign(res, last_resort);
-    tb->tb_default = last_idx;
+        fib_result_assign(res, last_resort);  // 将最后认定的路由信息结构记录到结果中
+    tb->tb_default = last_idx;   // 将最后认定的队列序列号记录到路由函数表
 out:
     return;
 }
@@ -1249,20 +1250,20 @@ void fib_select_multipath(struct fib_result *res)
     int w;
 
     spin_lock_bh(&fib_multipath_lock);
-    if (fi->fib_power <= 0) {
+    if (fi->fib_power <= 0) {  // 调整路由信息的跳转能力值
         int power = 0;
         change_nexthops(fi) {
             if (!(nexthop_nh->nh_flags & RTNH_F_DEAD)) {
-                power += nexthop_nh->nh_weight;
-                nexthop_nh->nh_power = nexthop_nh->nh_weight;
+                power += nexthop_nh->nh_weight;  // 记录每个跳转结构的压力值
+                nexthop_nh->nh_power = nexthop_nh->nh_weight;  // 能力来源于动力
             }
         }
         endfor_nexthops(fi);
-        fi->fib_power = power;
+        fi->fib_power = power; // 记录能力统计结果
         if (power <= 0) {
             spin_unlock_bh(&fib_multipath_lock);
             /* Race condition: route has just become dead. */
-            res->nh_sel = 0;
+            res->nh_sel = 0;  // 清理跳转计数
             return;
         }
     }
@@ -1277,11 +1278,11 @@ void fib_select_multipath(struct fib_result *res)
     change_nexthops(fi) {
         if (!(nexthop_nh->nh_flags & RTNH_F_DEAD) &&
                 nexthop_nh->nh_power) {
-            w -= nexthop_nh->nh_power;
+            w -= nexthop_nh->nh_power;  // 在能力范围统计跳转次数
             if (w <= 0) {
                 nexthop_nh->nh_power--;
                 fi->fib_power--;
-                res->nh_sel = nhsel;
+                res->nh_sel = nhsel;  // 记录跳转次数
                 spin_unlock_bh(&fib_multipath_lock);
                 return;
             }

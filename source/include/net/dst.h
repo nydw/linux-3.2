@@ -29,7 +29,7 @@
 
 struct sk_buff;
 
-struct dst_entry {  // 路由项的定义
+struct dst_entry {  // 路由目的结构的定义
 	struct rcu_head		rcu_head;
 	struct dst_entry	*child;
 	struct net_device       *dev;

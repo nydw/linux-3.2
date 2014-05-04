@@ -59,9 +59,12 @@ struct flowi4 {
 #define flowi4_proto		__fl_common.flowic_proto
 #define flowi4_flags		__fl_common.flowic_flags
 #define flowi4_secid		__fl_common.flowic_secid
+
     __be32			daddr;
     __be32			saddr;
+	
     union flowi_uli		uli;
+	
 #define fl4_sport		uli.ports.sport
 #define fl4_dport		uli.ports.dport
 #define fl4_icmp_type		uli.icmpt.type

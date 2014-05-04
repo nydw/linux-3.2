@@ -34,7 +34,7 @@ enum {
 #define NTF_ROUTER	0x80
 
 /*
- *	Neighbor Cache Entry States.
+ *	Neighbor Cache Entry States.  Network Unreachability Detection
  */
 
 #define NUD_INCOMPLETE	0x01

@@ -160,7 +160,7 @@ struct rtattr {
  *		Definitions used in routing table administration.
  ****/
 
-struct rtmsg {
+struct rtmsg {  // lgx_mark Â·ÓÉnetlink
 	unsigned char		rtm_family;
 	unsigned char		rtm_dst_len;
 	unsigned char		rtm_src_len;

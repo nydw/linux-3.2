@@ -66,21 +66,21 @@
 
 struct netlink_sock {
     /* struct sock has to be the first member of netlink_sock */
-    struct sock		sk;
-    u32			pid;
-    u32			dst_pid;
-    u32			dst_group;
-    u32			flags;
+    struct sock		sk;    // 关联的sock
+    u32			pid;       // 当前进程ID
+    u32			dst_pid;   // 目标进程的ID
+    u32			dst_group; // 目标进程组ID
+    u32			flags;     // 标志位
     u32			subscriptions;
-    u32			ngroups;
-    unsigned long		*groups;
-    unsigned long		state;
-    wait_queue_head_t	wait;
-    struct netlink_callback	*cb;
-    struct mutex		*cb_mutex;
-    struct mutex		cb_def_mutex;
-    void			(*netlink_rcv)(struct sk_buff *skb);
-    struct module		*module;
+    u32			ngroups;    // 进程组数量
+    unsigned long		*groups;  // 组位图
+    unsigned long		state;    // 状态位
+    wait_queue_head_t	wait;    // 等待队列
+    struct netlink_callback	*cb;  // 显示路由内容，ip route get
+    struct mutex		*cb_mutex;     // 互斥锁
+    struct mutex		cb_def_mutex;  // 默认的互斥锁
+    void			(*netlink_rcv)(struct sk_buff *skb);  // 接收数据包的函数指针
+    struct module		*module;  // 所属模块
 };
 
 struct listeners {
@@ -985,16 +985,16 @@ static inline int netlink_broadcast_deliver(struct sock *sk,
     return -1;
 }
 
-struct netlink_broadcast_data {
-    struct sock *exclude_sk;
+struct netlink_broadcast_data {  // lgx_mark 用于netlink广播使用的数据结构
+    struct sock *exclude_sk;  // 广播排除在外的sock
     struct net *net;
     u32 pid;
     u32 group;
-    int failure;
+    int failure;   // 是否发送成功
     int delivery_failure;
-    int congested;
-    int delivered;
-    gfp_t allocation;
+    int congested;  // 发送过程的拥挤情况
+    int delivered;  // 已经发送的标志
+    gfp_t allocation;  // 分配标志
     struct sk_buff *skb, *skb2;
     int (*tx_filter)(struct sock *dsk, struct sk_buff *skb, void *data);
     void *tx_data;
@@ -1519,7 +1519,7 @@ netlink_kernel_create(struct net *net, int unit, unsigned int groups,
     if (unit < 0 || unit >= MAX_LINKS)
         return NULL;
 
-    if (sock_create_lite(PF_NETLINK, SOCK_DGRAM, unit, &sock))
+    if (sock_create_lite(PF_NETLINK, SOCK_DGRAM, unit, &sock))  // 创建netlink的socket
         return NULL;
 
     /*
@@ -1528,7 +1528,7 @@ netlink_kernel_create(struct net *net, int unit, unsigned int groups,
      * So we create one inside init_net and the move it to net.
      */
 
-    if (__netlink_create(&init_net, sock, cb_mutex, unit) < 0)
+    if (__netlink_create(&init_net, sock, cb_mutex, unit) < 0)  // 创建sock结构
         goto out_sock_release_nosk;
 
     sk = sock->sk;

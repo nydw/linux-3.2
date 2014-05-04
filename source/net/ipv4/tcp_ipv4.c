@@ -146,7 +146,7 @@ EXPORT_SYMBOL_GPL(tcp_twsk_unique);
 
 /* This will initiate an outgoing connection. */
 int tcp_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
- {
+{
     struct sockaddr_in *usin = (struct sockaddr_in *)uaddr;
     struct inet_sock *inet = inet_sk(sk);
     struct tcp_sock *tp = tcp_sk(sk);
@@ -175,7 +175,7 @@ int tcp_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
     orig_sport = inet->inet_sport;
     orig_dport = usin->sin_port;
     fl4 = &inet->cork.fl.u.ip4;
-    rt = ip_route_connect(fl4, nexthop, inet->inet_saddr,        // route_mark   客户端向服务器发起连接请求的锅中被调用
+    rt = ip_route_connect(fl4, nexthop, inet->inet_saddr,        // lgx_mark   客户端向服务器发起连接请求的过程中被调用
 
                           RT_CONN_FLAGS(sk), sk->sk_bound_dev_if,
                           IPPROTO_TCP,
@@ -1922,10 +1922,10 @@ static int tcp_v4_init_sock(struct sock *sk)
         /* Default, cookies without s_data_payload. */
         tp->cookie_values = kzalloc(sizeof(*tp->cookie_values),
                                     sk->sk_allocation);
-		
+
         if (tp->cookie_values != NULL)
             kref_init(&tp->cookie_values->kref);
-		
+
     }
     /* Presumed zeroed, in order of appearance:
      *	cookie_in_always, cookie_out_never,
