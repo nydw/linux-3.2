@@ -428,9 +428,9 @@ struct sk_buff {
     int			skb_iif;  // 接收设备的index
 
 #ifdef CONFIG_NET_SCHED
-    __u16			tc_index;	/* traffic control index */
+    __u16			tc_index;	/* traffic control index qos*/
 #ifdef CONFIG_NET_CLS_ACT
-    __u16			tc_verd;	/* traffic control verdict */
+    __u16			tc_verd;	/* traffic control verdict qos*/
 #endif
 #endif
 
