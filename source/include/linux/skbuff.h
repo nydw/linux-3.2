@@ -122,7 +122,7 @@ struct sk_buff_head {
     struct sk_buff	*next;
     struct sk_buff	*prev;
 
-    __u32		qlen;
+    __u32		qlen;  // sk_buff链上包含多少个skb
     spinlock_t	lock;
 };
 
@@ -384,12 +384,12 @@ struct sk_buff {
      */
     char			cb[48] __aligned(8);
 
-    unsigned long		_skb_refdst;  // 路由表或者路由项
+    unsigned long		_skb_refdst;  // 路由表或者路由项 dst_entry类型
 #ifdef CONFIG_XFRM
     struct	sec_path	*sp;  //用于xfrm的安全路径
 #endif
     unsigned int		len,  //全部数据块的总长度
-                   data_len;     //分段，分散数据块的总长度
+                   data_len;     //分段，分散数据块的总长度 skb_shared_info
     __u16			mac_len,  //链路层头部长度
                     hdr_len;      //在克隆数据包是可写的头部长度
     union {
@@ -399,7 +399,7 @@ struct sk_buff {
             __u16	csum_offset;  // 校验和保存到csum_start中的位置
         };
     };
-    __u32			priority;   //数据包在队列中的优先级
+    __u32			priority;   //数据包在qos队列中的优先级
     kmemcheck_bitfield_begin(flags1);
     __u8			local_df:1,  // 是否允许本地数据分段
                     cloned:1,        // 是否允许被克隆
@@ -412,7 +412,7 @@ struct sk_buff {
                     peeked:1,        // 数据包是否处于操作状态
                     nf_trace:1;      // netfilter 对数据包的跟踪标志
     kmemcheck_bitfield_end(flags1);
-    __be16			protocol;    // 底层驱动使用的数据包协议
+    __be16			protocol;    // 底层驱动使用的数据包协议,L3层的协议。比如IP,IPV6等等。
 
     void			(*destructor)(struct sk_buff *skb);  //销毁数据包的函数
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
@@ -425,7 +425,8 @@ struct sk_buff {
     struct nf_bridge_info	*nf_bridge; // 关于网桥的数据
 #endif
 
-    int			skb_iif;
+    int			skb_iif;  // 接收设备的index
+
 #ifdef CONFIG_NET_SCHED
     __u16			tc_index;	/* traffic control index */
 #ifdef CONFIG_NET_CLS_ACT
@@ -435,7 +436,7 @@ struct sk_buff {
 
     __u32			rxhash;
 
-    __u16			queue_mapping;
+    __u16			queue_mapping;  // 多队列设备的映射, 也就是说映射到那个队列。 
     kmemcheck_bitfield_begin(flags2);
 #ifdef CONFIG_IPV6_NDISC_NODETYPE
     __u8			ndisc_nodetype:2;
@@ -453,23 +454,23 @@ struct sk_buff {
     __u32			secmark;
 #endif
     union {
-        __u32		mark;
+        __u32		mark;  //skb的标记
         __u32		dropcount;
         __u32		avail_size;
     };
 
-    __u16			vlan_tci;
+    __u16			vlan_tci;  // vlan的控制tag。
 
     sk_buff_data_t		transport_header;   // 指向数据块中传输层头部 ,64位用位移，32位用指针
     sk_buff_data_t		network_header; // 指向数据块中网络层头部
     sk_buff_data_t		mac_header; // 指向数据块中链路层头部
     /* These elements must be at the end, see alloc_skb() for details.  */
-    sk_buff_data_t		tail;   // 指向数据块的结束地址
+    sk_buff_data_t		tail;   // 指向数据块的结束地址,边界
     sk_buff_data_t		end;    // 指向缓冲块的结束地址
-    unsigned char		*head,  // 指向缓冲块的开始地址
-                  *data;          // 指向数据块的开始地址
-    unsigned int		truesize;  // 数据包的实际长度，结构长度与数据块长度之和
-    atomic_t		users;     //数据包的使用计数器
+    unsigned char		*head,  // 指向缓冲块的开始地址,边界
+                        *data;  // 指向数据块的开始地址
+    unsigned int		truesize;  // 数据包的实际长度，sk_buff结构长度与数据块长度之和
+    atomic_t		    users;     // 数据包的使用计数器
 };
 
 #ifdef __KERNEL__
@@ -538,7 +539,7 @@ extern void consume_skb(struct sk_buff *skb);
 extern void	       __kfree_skb(struct sk_buff *skb);
 extern struct sk_buff *__alloc_skb(unsigned int size,
                                    gfp_t priority, int fclone, int node);
-static inline struct sk_buff *alloc_skb(unsigned int size,
+static inline struct sk_buff *alloc_skb(unsigned int size,  // 分配缓冲区和一个sk_buff结构
                                         gfp_t priority)
 {
     return __alloc_skb(size, priority, 0, NUMA_NO_NODE);
@@ -917,7 +918,7 @@ static inline void __skb_queue_head_init(struct sk_buff_head *list)
  * network layer or drivers should need annotation to consolidate the
  * main types of usage into 3 classes.
  */
-static inline void skb_queue_head_init(struct sk_buff_head *list)
+static inline void skb_queue_head_init(struct sk_buff_head *list)  // 队列初始化
 {
     spin_lock_init(&list->lock);
     __skb_queue_head_init(list);
@@ -2023,7 +2024,7 @@ static inline int pskb_trim_rcsum(struct sk_buff *skb, unsigned int len)
     return __pskb_trim(skb, len);
 }
 
-#define skb_queue_walk(queue, skb) \
+#define skb_queue_walk(queue, skb) \    // 循环队列每个元素
 		for (skb = (queue)->next;					\
 		     skb != (struct sk_buff *)(queue);				\
 		     skb = skb->next)

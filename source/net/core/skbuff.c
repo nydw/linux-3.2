@@ -293,7 +293,7 @@ EXPORT_SYMBOL(skb_add_rx_frag);
  *	%NULL is returned if there is no free memory. Although this function
  *	allocates memory it can be called from an interrupt.
  */
-struct sk_buff *dev_alloc_skb(unsigned int length)
+struct sk_buff *dev_alloc_skb(unsigned int length) // 设备驱动程序使用的缓冲区分配函数
 {
 	/*
 	 * There is more code here than it seems:
@@ -451,7 +451,7 @@ EXPORT_SYMBOL(__kfree_skb);
  *	Drop a reference to the buffer and free it if the usage count has
  *	hit zero.
  */
-void kfree_skb(struct sk_buff *skb)
+void kfree_skb(struct sk_buff *skb)  释放结构
 {
 	if (unlikely(!skb))
 		return;
@@ -472,7 +472,7 @@ EXPORT_SYMBOL(kfree_skb);
  *	Functions identically to kfree_skb, but kfree_skb assumes that the frame
  *	is being dropped after a failure and notes that
  */
-void consume_skb(struct sk_buff *skb)
+void consume_skb(struct sk_buff *skb) // 释放结构
 {
 	if (unlikely(!skb))
 		return;
@@ -1986,7 +1986,7 @@ EXPORT_SYMBOL(skb_copy_and_csum_dev);
  *	returned or %NULL if the list is empty.
  */
 
-struct sk_buff *skb_dequeue(struct sk_buff_head *list)
+struct sk_buff *skb_dequeue(struct sk_buff_head *list) // 从头部去掉
 {
 	unsigned long flags;
 	struct sk_buff *result;
@@ -2006,7 +2006,7 @@ EXPORT_SYMBOL(skb_dequeue);
  *	may be used safely with other locking list functions. The tail item is
  *	returned or %NULL if the list is empty.
  */
-struct sk_buff *skb_dequeue_tail(struct sk_buff_head *list)
+struct sk_buff *skb_dequeue_tail(struct sk_buff_head *list) // 从尾部去掉
 {
 	unsigned long flags;
 	struct sk_buff *result;
@@ -2026,7 +2026,7 @@ EXPORT_SYMBOL(skb_dequeue_tail);
  *	the list and one reference dropped. This function takes the list
  *	lock and is atomic with respect to other list locking functions.
  */
-void skb_queue_purge(struct sk_buff_head *list)
+void skb_queue_purge(struct sk_buff_head *list)   // 队列变空
 {
 	struct sk_buff *skb;
 	while ((skb = skb_dequeue(list)) != NULL)
@@ -2045,7 +2045,7 @@ EXPORT_SYMBOL(skb_queue_purge);
  *
  *	A buffer cannot be placed on two lists at the same time.
  */
-void skb_queue_head(struct sk_buff_head *list, struct sk_buff *newsk)
+void skb_queue_head(struct sk_buff_head *list, struct sk_buff *newsk)  // 添加到头部
 {
 	unsigned long flags;
 
@@ -2066,7 +2066,7 @@ EXPORT_SYMBOL(skb_queue_head);
  *
  *	A buffer cannot be placed on two lists at the same time.
  */
-void skb_queue_tail(struct sk_buff_head *list, struct sk_buff *newsk)
+void skb_queue_tail(struct sk_buff_head *list, struct sk_buff *newsk) // skb_queue_tail
 {
 	unsigned long flags;
 
