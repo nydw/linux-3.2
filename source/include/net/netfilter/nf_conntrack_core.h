@@ -20,7 +20,7 @@
 /* This header is used to share core functionality between the
    standalone connection tracking module, and the compatibility layer's use
    of connection tracking. */
-extern unsigned int nf_conntrack_in(struct net *net,
+extern unsigned int nf_conntrack_in(struct net *net,  
 				    u_int8_t pf,
 				    unsigned int hooknum,
 				    struct sk_buff *skb);
@@ -55,7 +55,7 @@ nf_conntrack_find_get(struct net *net, u16 zone,
 extern int __nf_conntrack_confirm(struct sk_buff *skb);
 
 /* Confirm a connection: returns NF_DROP if packet must be dropped. */
-static inline int nf_conntrack_confirm(struct sk_buff *skb)
+static inline int nf_conntrack_confirm(struct sk_buff *skb)  // lgx_mark 创建连接跟踪
 {
 	struct nf_conn *ct = (struct nf_conn *)skb->nfct;
 	int ret = NF_ACCEPT;

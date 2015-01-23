@@ -425,7 +425,7 @@ EXPORT_SYMBOL_GPL(nf_conntrack_hash_insert);
 
 /* Confirm a connection given skb; places it in hash table */
 int
-__nf_conntrack_confirm(struct sk_buff *skb)
+__nf_conntrack_confirm(struct sk_buff *skb)  // lgx_mark 将新建的连接跟踪记录添加到连接跟踪表中。
 {
 	unsigned int hash, repl_hash;
 	struct nf_conntrack_tuple_hash *h;
@@ -514,7 +514,7 @@ __nf_conntrack_confirm(struct sk_buff *skb)
 	 * guarantee that no other CPU can find the conntrack before the above
 	 * stores are visible.
 	 */
-	__nf_conntrack_hash_insert(ct, hash, repl_hash);
+	__nf_conntrack_hash_insert(ct, hash, repl_hash);   // 添加到连接跟踪表中
 	NF_CT_STAT_INC(net, insert);
 	spin_unlock_bh(&nf_conntrack_lock);
 
@@ -877,7 +877,7 @@ resolve_normal_ct(struct net *net, struct nf_conn *tmpl,
 }
 
 unsigned int
-nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
+nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,  //  lgx_mark 创建连接跟踪
 		struct sk_buff *skb)
 {
 	struct nf_conn *ct, *tmpl = NULL;
@@ -930,7 +930,7 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 			goto out;
 	}
 
-	ct = resolve_normal_ct(net, tmpl, skb, dataoff, pf, protonum,
+	ct = resolve_normal_ct(net, tmpl, skb, dataoff, pf, protonum,  // lgx_mark 在连接跟踪表中查找匹配的跟踪记录?如果没有找到则调用init_conntrack创建一个新的记录。
 			       l3proto, l4proto, &set_reply, &ctinfo);
 	if (!ct) {
 		/* Not valid part of a connection */

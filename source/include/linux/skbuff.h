@@ -231,7 +231,7 @@ struct ubuf_info {
 /* This data is invariant across clones and lives at
  * the end of the header data, ie. at skb->end.
  */
-struct skb_shared_info {
+struct skb_shared_info {  // 描述data内存空间的信息
     unsigned short	nr_frags;
     unsigned short	gso_size;
     /* Warning: this field is not always filled in (UFO)! */
@@ -389,7 +389,7 @@ struct sk_buff {
     struct	sec_path	*sp;  //用于xfrm的安全路径
 #endif
     unsigned int		len,  //全部数据块的总长度
-                   data_len;     //分段，分散数据块的总长度 skb_shared_info
+                   data_len;     //分段，分散数据块的总长度 skb_shared_info 在frags和frag_list里面存储的报文的长度 alloc_skb
     __u16			mac_len,  //链路层头部长度
                     hdr_len;      //在克隆数据包是可写的头部长度
     union {
@@ -469,8 +469,8 @@ struct sk_buff {
     sk_buff_data_t		end;    // 指向缓冲块的结束地址
     unsigned char		*head,  // 指向缓冲块的开始地址,边界
                         *data;  // 指向数据块的开始地址
-    unsigned int		truesize;  // 数据包的实际长度，sk_buff结构长度与数据块长度之和
-    atomic_t		    users;     // 数据包的使用计数器
+    unsigned int		truesize;  // 数据包的实际长度，sk_buff结构长度与数据块长度之和, head所指的存储区的大小
+    atomic_t		    users;     // 数据包的用户计数器
 };
 
 #ifdef __KERNEL__
@@ -779,7 +779,7 @@ static inline void skb_header_release(struct sk_buff *skb)
  *	Returns true if more than one person has a reference to this
  *	buffer.
  */
-static inline int skb_shared(const struct sk_buff *skb)
+static inline int skb_shared(const struct sk_buff *skb) // skb是否被多个进程共享
 {
     return atomic_read(&skb->users) != 1;
 }
@@ -1597,7 +1597,7 @@ static inline void pskb_trim_unique(struct sk_buff *skb, unsigned int len)
  *	destructor function and make the @skb unowned. The buffer continues
  *	to exist but is no longer charged to its former owner.
  */
-static inline void skb_orphan(struct sk_buff *skb)
+static inline void skb_orphan(struct sk_buff *skb)  // 使包成为不属于任何套接字的孤包
 {
     if (skb->destructor)
         skb->destructor(skb);

@@ -178,7 +178,7 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 
 	cache = fclone ? skbuff_fclone_cache : skbuff_head_cache;
 
-	/* Get the HEAD */
+	/* 分配skb结构 */
 	skb = kmem_cache_alloc_node(cache, gfp_mask & ~__GFP_DMA, node);
 	if (!skb)
 		goto out;
@@ -189,9 +189,9 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	 * aligned memory blocks, unless SLUB/SLAB debug is enabled.
 	 * Both skb->head and skb_shared_info are cache line aligned.
 	 */
-	size = SKB_DATA_ALIGN(size);
-	size += SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
-	data = kmalloc_node_track_caller(size, gfp_mask, node);
+	size = SKB_DATA_ALIGN(size); // 对齐size
+	size += SKB_DATA_ALIGN(sizeof(struct skb_shared_info)); // share_info
+	data = kmalloc_node_track_caller(size, gfp_mask, node); // 数据区大小
 	if (!data)
 		goto nodata;
 	/* kmalloc(size) might give us more room than requested.
@@ -208,8 +208,8 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	 */
 	memset(skb, 0, offsetof(struct sk_buff, tail));
 	/* Account for allocated memory : skb + skb->head */
-	skb->truesize = SKB_TRUESIZE(size);
-	atomic_set(&skb->users, 1);
+	skb->truesize = SKB_TRUESIZE(size);  
+	atomic_set(&skb->users, 1);  // user加1
 	skb->head = data;
 	skb->data = data;
 	skb_reset_tail_pointer(skb);
@@ -708,13 +708,16 @@ struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t gfp_mask)
 			return NULL;
 	}
 
-	n = skb + 1;
+	n = skb + 1;  // skb紧跟的那块内存
 	if (skb->fclone == SKB_FCLONE_ORIG &&
-	    n->fclone == SKB_FCLONE_UNAVAILABLE) {
+	    n->fclone == SKB_FCLONE_UNAVAILABLE) 
+	{
 		atomic_t *fclone_ref = (atomic_t *) (n + 1);
 		n->fclone = SKB_FCLONE_CLONE;
 		atomic_inc(fclone_ref);
-	} else {
+	} 
+	else 
+	{
 		n = kmem_cache_alloc(skbuff_head_cache, gfp_mask);
 		if (!n)
 			return NULL;
@@ -768,7 +771,7 @@ static void copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
  *	header is going to be modified. Use pskb_copy() instead.
  */
 
-struct sk_buff *skb_copy(const struct sk_buff *skb, gfp_t gfp_mask)
+struct sk_buff *skb_copy(const struct sk_buff *skb, gfp_t gfp_mask) // 复制skb的所有数据段,包括切片数据
 {
 	int headerlen = skb_headroom(skb);
 	unsigned int size = (skb_end_pointer(skb) - skb->head) + skb->data_len;
@@ -816,13 +819,13 @@ struct sk_buff *pskb_copy(struct sk_buff *skb, gfp_t gfp_mask)
 	/* Set the tail pointer and length */
 	skb_put(n, skb_headlen(skb));
 	/* Copy the bytes */
-	skb_copy_from_linear_data(skb, n->data, n->len);
+	skb_copy_from_linear_data(skb, n->data, n->len);  // 复制线性数据段。
 
 	n->truesize += skb->data_len;
 	n->data_len  = skb->data_len;
 	n->len	     = skb->len;
 
-	if (skb_shinfo(skb)->nr_frags) {
+	if (skb_shinfo(skb)->nr_frags) {  // 下面只是复制切片数据的指针
 		int i;
 
 		if (skb_shinfo(skb)->tx_flags & SKBTX_DEV_ZEROCOPY) {

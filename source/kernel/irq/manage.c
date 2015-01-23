@@ -1304,7 +1304,7 @@ EXPORT_SYMBOL_GPL(remove_irq);
  *
  *	This function must not be called from interrupt context.
  */
-void free_irq(unsigned int irq, void *dev_id)
+void free_irq(unsigned int irq, void *dev_id)  // 释放中断处理器
 {
 	struct irq_desc *desc = irq_to_desc(irq);
 
