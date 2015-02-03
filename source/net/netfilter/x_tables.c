@@ -46,14 +46,16 @@ struct compat_delta {
 
 struct xt_af {
     struct mutex mutex;
-    struct list_head match;
-    struct list_head target;
+    struct list_head match;  // 每个match模块都会被注册到这里
+    struct list_head target; // 每个target模块都会被注册到这里
+
 #ifdef CONFIG_COMPAT
     struct mutex compat_mutex;
     struct compat_delta *compat_tab;
     unsigned int number; /* number of slots in compat_tab[] */
     unsigned int cur; /* number of used slots in compat_tab[] */
 #endif
+
 };
 
 static struct xt_af *xt;
@@ -1375,6 +1377,7 @@ static int __init xt_init(void)
 
     for (i = 0; i < NFPROTO_NUMPROTO; i++) {
         mutex_init(&xt[i].mutex);
+
 #ifdef CONFIG_COMPAT
         mutex_init(&xt[i].compat_mutex);
         xt[i].compat_tab = NULL;
@@ -1382,9 +1385,12 @@ static int __init xt_init(void)
         INIT_LIST_HEAD(&xt[i].target);
         INIT_LIST_HEAD(&xt[i].match);
     }
+
     rv = register_pernet_subsys(&xt_net_ops);
+
     if (rv < 0)
         kfree(xt);
+
     return rv;
 }
 

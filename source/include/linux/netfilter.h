@@ -111,7 +111,7 @@ struct nf_hook_ops {
     struct list_head list;
 
     /* User fills in from here down. */
-    nf_hookfn *hook;  //nf_mark   处理函数指针
+    nf_hookfn *hook;  // lgx_mark   处理函数指针
     struct module *owner;
     u_int8_t pf;  //  协议族
     unsigned int hooknum;  // hook号
@@ -354,7 +354,7 @@ nf_nat_decode_session(struct sk_buff *skb, struct flowi *fl, u_int8_t family)
 extern struct proc_dir_entry *proc_net_netfilter;
 #endif
 
-#else /* !CONFIG_NETFILTER */  //nf_mark 没有选中内核nf编译选项
+#else /* !CONFIG_NETFILTER */  // lgx_mark 没有选中内核nf编译选项
 
 #define NF_HOOK(pf, hook, skb, indev, outdev, okfn) (okfn)(skb)  // 没有开启netfilter
 #define NF_HOOK_COND(pf, hook, skb, indev, outdev, okfn, cond) (okfn)(skb)  // 没有开启netfilter

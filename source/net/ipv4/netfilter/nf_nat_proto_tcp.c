@@ -31,7 +31,7 @@ tcp_unique_tuple(struct nf_conntrack_tuple *tuple,
 }
 
 static bool
-tcp_manip_pkt(struct sk_buff *skb,
+tcp_manip_pkt(struct sk_buff *skb, 
 	      unsigned int iphdroff,
 	      const struct nf_conntrack_tuple *tuple,
 	      enum nf_nat_manip_type maniptype)

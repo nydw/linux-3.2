@@ -28,7 +28,7 @@ MODULE_DESCRIPTION("iptables mangle table");
 			    (1 << NF_INET_LOCAL_OUT) | \
 			    (1 << NF_INET_POST_ROUTING))
 
-static const struct xt_table packet_mangler = { // nf_mark mangler±í
+static const struct xt_table packet_mangler = { // lgx_mark mangler±í
 	.name		= "mangle",
 	.valid_hooks	= MANGLE_VALID_HOOKS,
 	.me		= THIS_MODULE,

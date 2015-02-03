@@ -31,7 +31,7 @@
 			 (1 << NF_INET_LOCAL_OUT) | \
 			 (1 << NF_INET_LOCAL_IN))
 
-static const struct xt_table nat_table = { //nf_mark nat±í
+static const struct xt_table nat_table = { // lgx_mark nat±í
 	.name		= "nat",
 	.valid_hooks	= NAT_VALID_HOOKS,
 	.me		= THIS_MODULE,
@@ -54,6 +54,7 @@ ipt_snat_target(struct sk_buff *skb, const struct xt_action_param *par)
 	/* Connection must be valid and new. */
 	NF_CT_ASSERT(ct && (ctinfo == IP_CT_NEW || ctinfo == IP_CT_RELATED ||
 			    ctinfo == IP_CT_RELATED_REPLY));
+
 	NF_CT_ASSERT(par->out != NULL);
 
 	return nf_nat_setup_info(ct, &mr->range[0], IP_NAT_MANIP_SRC);

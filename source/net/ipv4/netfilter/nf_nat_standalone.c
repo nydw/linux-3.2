@@ -246,7 +246,7 @@ nf_nat_local_fn(unsigned int hooknum,
 static struct nf_hook_ops nf_nat_ops[] __read_mostly = {
 	/* Before packet filtering, change destination */
 	{
-		.hook		= nf_nat_in,
+		.hook		= nf_nat_in,  // lgx_mark 完成对其目的地址转换的操作
 		.owner		= THIS_MODULE,
 		.pf		= NFPROTO_IPV4,
 		.hooknum	= NF_INET_PRE_ROUTING,
@@ -254,7 +254,7 @@ static struct nf_hook_ops nf_nat_ops[] __read_mostly = {
 	},
 	/* After packet filtering, change source */
 	{
-		.hook		= nf_nat_out,
+		.hook		= nf_nat_out,  // lgx_mark 完成源地址转换任务
 		.owner		= THIS_MODULE,
 		.pf		= NFPROTO_IPV4,
 		.hooknum	= NF_INET_POST_ROUTING,
@@ -263,7 +263,7 @@ static struct nf_hook_ops nf_nat_ops[] __read_mostly = {
 	/* Before packet filtering, change destination */
 	{
 		.hook		= nf_nat_local_fn,
-		.owner		= THIS_MODULE,
+		.owner		= THIS_MODULE, // lgx_mark 改变本机发出报文的目的地址
 		.pf		= NFPROTO_IPV4,
 		.hooknum	= NF_INET_LOCAL_OUT,
 		.priority	= NF_IP_PRI_NAT_DST,

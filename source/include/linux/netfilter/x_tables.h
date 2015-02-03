@@ -7,13 +7,13 @@
 #define XT_EXTENSION_MAXNAMELEN 29
 #define XT_TABLE_MAXNAMELEN 32
 
-struct xt_entry_match      //nf_mark
+struct xt_entry_match      // lgx_mark
 {
     union
     {
         struct
         {
-            __u16 match_size;  //描述match大小   IPT_ALIGN
+            __u16 match_size;  // 描述match大小   IPT_ALIGN
 
             /* Used by userspace */
             char name[XT_EXTENSION_MAXNAMELEN];
@@ -37,7 +37,7 @@ struct xt_entry_match      //nf_mark
 
 };
 
-struct xt_entry_target {  //nf_mark
+struct xt_entry_target {  // lgx_mark
     union {
         struct {
             __u16 target_size;
@@ -340,7 +340,7 @@ struct xt_match {
 };
 
 /* Registration hooks for targets. */
-struct xt_target {  // nf_mark
+struct xt_target {  // lgx_mark
     struct list_head list;
 
     const char name[XT_EXTENSION_MAXNAMELEN];
@@ -388,10 +388,10 @@ struct xt_table {
     struct list_head list;
 
     /* What hooks you will enter on */
-    unsigned int valid_hooks;  //nf_mark 表所监听的HOOK，实质是一个位图         MANGLE_VALID_HOOKS
+    unsigned int valid_hooks;  //lgx_mark 表所监听的HOOK，实质是一个位图         MANGLE_VALID_HOOKS
 
     /* Man behind the curtain... */
-    struct xt_table_info *private;  //  表所存储的数据信息，也就是实际的数据区
+    struct xt_table_info *private;  //  表所存储的数据信息，也就是实际的数据区  xt_table_info
 
     /* Set this to THIS_MODULE if you are a module, otherwise NULL */
     struct module *me; // 取值为THIS_MODULE时，阻止用户rmmod仍然被某个规则指向的模块
@@ -408,15 +408,15 @@ struct xt_table {
 /* The table itself */
 struct xt_table_info {
     /* Size per table */
-    unsigned int size;
+    unsigned int size; // 表占用空间的大小
     /* Number of entries: FIXME. --RR */
-    unsigned int number;  // 表项的数目
+    unsigned int number;  // 规则的数目
     /* Initial number of entries. Needed for module usage count */
-    unsigned int initial_entries;  // 初始化表项的数目
+    unsigned int initial_entries;  // 初始化的规则数目
 
     /* Entry points and underflows */
 
-    unsigned int hook_entry[NF_INET_NUMHOOKS];  // 所监听hook的规则入口
+    unsigned int hook_entry[NF_INET_NUMHOOKS];  // 所监听hook的规则入口,相对于下面的entries变量的偏移量
     unsigned int underflow[NF_INET_NUMHOOKS];   // 规则表的最大下界
 
     /*

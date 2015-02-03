@@ -266,7 +266,7 @@ out:
 }
 
 unsigned int
-nf_nat_setup_info(struct nf_conn *ct,
+nf_nat_setup_info(struct nf_conn *ct,   // lgx_mark 对ip_conntrack结构实例中相关字段进行了设置, 并没有修改原始数据包skb里的源,目的IP或任何端口。
 		  const struct nf_nat_range *range,
 		  enum nf_nat_manip_type maniptype)
 {
@@ -338,7 +338,7 @@ EXPORT_SYMBOL(nf_nat_setup_info);
 
 /* Returns true if succeeded. */
 static bool
-manip_pkt(u_int16_t proto,
+manip_pkt(u_int16_t proto,   // lgx_mark  对skb里面源/目的地址端口以及数据包的校验和字段修改的地方
 	  struct sk_buff *skb,
 	  unsigned int iphdroff,
 	  const struct nf_conntrack_tuple *target,

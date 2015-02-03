@@ -286,7 +286,7 @@ struct ipt_entry *ipt_next_entry(const struct ipt_entry *entry)
 
 /* Returns one of the generic firewall policies, like NF_ACCEPT. */
 unsigned int
-ipt_do_table(struct sk_buff *skb,
+ipt_do_table(struct sk_buff *skb,  // lgx_mark 完成包过滤功能
 	     unsigned int hook,
 	     const struct net_device *in,
 	     const struct net_device *out,
@@ -327,7 +327,7 @@ ipt_do_table(struct sk_buff *skb,
 	addend = xt_write_recseq_begin();
 	private = table->private;
 	cpu        = smp_processor_id();
-	table_base = private->entries[cpu];
+	table_base = private->entries[cpu]; // 获取对应cpu上的入口
 	jumpstack  = (struct ipt_entry **)private->jumpstack[cpu];
 	stackptr   = per_cpu_ptr(private->stackptr, cpu);
 	origptr    = *stackptr;
@@ -343,14 +343,15 @@ ipt_do_table(struct sk_buff *skb,
 		const struct xt_entry_match *ematch;
 
 		IP_NF_ASSERT(e);
-		if (!ip_packet_match(ip, indev, outdev,
-		    &e->ip, acpar.fragoff)) {
+		if (!ip_packet_match(ip, indev, outdev,  // 检查基本的IP包头
+		    &e->ip, acpar.fragoff)) 
+        {
  no_match:
 			e = ipt_next_entry(e);
 			continue;
 		}
 
-		xt_ematch_foreach(ematch, e) {
+		xt_ematch_foreach(ematch, e) {    // 扩展项匹配
 			acpar.match     = ematch->u.kernel.match;
 			acpar.matchinfo = ematch->data;
 			if (!acpar.match->match(skb, &acpar))
@@ -359,7 +360,7 @@ ipt_do_table(struct sk_buff *skb,
 
 		ADD_COUNTER(e->counters, skb->len, 1);
 
-		t = ipt_get_target(e);
+		t = ipt_get_target(e);  // 获取规则的target
 		IP_NF_ASSERT(t->u.kernel.target);
 
 #if defined(CONFIG_NETFILTER_XT_TARGET_TRACE) || \
@@ -420,8 +421,10 @@ ipt_do_table(struct sk_buff *skb,
 			/* Verdict */
 			break;
 	} while (!acpar.hotdrop);
+
 	pr_debug("Exiting %s; resetting sp from %u to %u\n",
 		 __func__, *stackptr, origptr);
+
 	*stackptr = origptr;
  	xt_write_recseq_end(addend);
  	local_bh_enable();
@@ -2056,7 +2059,7 @@ do_ipt_get_ctl(struct sock *sk, int cmd, void __user *user, int *len)
 	return ret;
 }
 
-struct xt_table *ipt_register_table(struct net *net, // nf_mark
+struct xt_table *ipt_register_table(struct net *net, // lgx_mark
 				    const struct xt_table *table,
 				    const struct ipt_replace *repl)
 {

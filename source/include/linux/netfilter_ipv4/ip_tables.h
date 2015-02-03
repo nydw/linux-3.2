@@ -121,7 +121,7 @@ IPTables中的规则表可以在用户空间中使用，
 
 */
 
-struct ipt_entry {   // nf_mark 存储规则的整体信息
+struct ipt_entry {   // lgx_mark 存储规则的整体信息
     struct ipt_ip ip; // ip数据包包头信息
 
     /* Mark with fields that we care about. */
@@ -206,7 +206,7 @@ struct ipt_replace {
     unsigned int num_entries;  // 规则表入口的数量
 
     /* Total size of new entries */
-    unsigned int size;   // 新的规则表的总大小
+    unsigned int size;   // 新规则所占用存储空间的大小
 
     /* Hook entry points. */
     unsigned int hook_entry[NF_INET_NUMHOOKS];  // 表所监听hook的规则入口

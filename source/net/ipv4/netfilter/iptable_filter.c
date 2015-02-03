@@ -10,6 +10,8 @@
  *
  */
 
+/* lgx_mark filter模块*/
+
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
@@ -24,7 +26,7 @@ MODULE_DESCRIPTION("iptables filter table");
 			    (1 << NF_INET_FORWARD) | \
 			    (1 << NF_INET_LOCAL_OUT))
 
-static const struct xt_table packet_filter = {  // nf_mark filter表
+static const struct xt_table packet_filter = {  // lgx_mark filter表
     .name		= "filter",
     .valid_hooks	= FILTER_VALID_HOOKS,
     .me		= THIS_MODULE,
@@ -66,7 +68,7 @@ static int __net_init iptable_filter_net_init(struct net *net)
     /* Entry 1 is the FORWARD hook */
 
     ((struct ipt_standard *)repl->entries)[1].target.verdict = -forward - 1;
-    net->ipv4.iptable_filter = ipt_register_table(net, &packet_filter, repl); //nf_mark 每个命名空间都将获得一份iptable_filter
+    net->ipv4.iptable_filter = ipt_register_table(net, &packet_filter, repl); // lgx_mark 每个命名空间都将获得一份iptable_filter
 
     kfree(repl);
 
@@ -97,13 +99,12 @@ static int __init iptable_filter_init(void)
         return -EINVAL;
     }
 
-    ret = register_pernet_subsys(&iptable_filter_net_ops);
+    ret = register_pernet_subsys(&iptable_filter_net_ops);  // 注册过滤表
 
     if (ret < 0)
         return ret;
 
-    /* Register hooks */
-    filter_ops = xt_hook_link(&packet_filter, iptable_filter_hook);
+    filter_ops = xt_hook_link(&packet_filter, iptable_filter_hook); // 注册hook
 
     if (IS_ERR(filter_ops))
     {
